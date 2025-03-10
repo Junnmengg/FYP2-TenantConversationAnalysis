@@ -1,1 +1,17 @@
 # FYP2-TenantConversationAnalysis
+
+# MWE
+pip install streamlit
+pip install torch
+pip install transformers
+pip install pytorch-crf
+pip install openpyxl
+pip install xlsxwriter
+
+# Emotion
+pip install streamlit 
+pip install transformers 
+pip install torch 
+pip install numpy 
+pip install sentencepiece
+pip install textblob
