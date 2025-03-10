@@ -16,12 +16,6 @@ from transformers import pipeline, AutoModelForSequenceClassification
 from textblob import TextBlob 
 import altair as alt
 
-# Personality Trait Prediction
-import streamlit as st
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
-import torch
-import emoji
-
 Username1 = os.getenv('USERNAME1')
 Username2 = os.getenv('USERNAME2')
 Token = os.getenv('TOKEN')
