@@ -15,3 +15,11 @@
 - pip install numpy 
 - pip install sentencepiece
 - pip install textblob
+
+### Personality Trait Prediction
+- pip install streamlit 
+- pip install transformers 
+- pip install torch
+- pip install emoji
+- pip install transformers 
+- pip install torch 
