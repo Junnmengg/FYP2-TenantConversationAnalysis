@@ -5,3 +5,4 @@ pytorch-crf
 numpy
 sentencepiece
 textblob
+emoji
