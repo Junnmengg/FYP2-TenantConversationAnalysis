@@ -16,14 +16,25 @@ from transformers import pipeline, AutoModelForSequenceClassification
 from textblob import TextBlob 
 import altair as alt
 
+# Personality Trait Prediction
+import streamlit as st
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import torch
+import emoji
+
 Username1 = os.getenv('USERNAME1')
 Username2 = os.getenv('USERNAME2')
+Username3 = os.getenv('USERNAME3')
 Token = os.getenv('TOKEN')
 
 st.set_page_config(
-    page_title="ChatPulse App",
+    page_title="BeLive App",
     page_icon="🚀"
 )
+
+# Global dictionaries for models & tokenizers
+models = {}
+tokenizers = {}
 
 # Function to check if a token is punctuation
 def is_punctuation(token):
@@ -88,6 +99,21 @@ def load_emotion_model():
     return pipe_lr
 
 pipe_lr = load_emotion_model()
+
+# Load Personality Trait Model
+@st.cache_resource
+def load_personality_models():
+    model_path = Username3
+    for trait in ['openness', 'conscientiousness', 'extraversion', 'agreeableness', 'neuroticism']:
+        path = f"{model_path}{trait}"
+        model = AutoModelForSequenceClassification.from_pretrained(path, num_labels=1)
+        tokenizer = AutoTokenizer.from_pretrained(path)
+        tokenizers[trait] = tokenizer
+        models[trait] = model 
+    return models, tokenizers
+
+if "models" not in st.session_state or "tokenizer" not in st.session_state:
+    st.session_state.models, st.session_state.tokenizers = load_personality_models()
 
 # Function for MWE Detection
 def perform_mwe_detection(sentence, model, tokenizer):
@@ -175,18 +201,36 @@ def classify_sentiment(score):
         return "Negative"
     else:
         return "Neutral"
+    
+# Function for Personality Trait
+def convert_emojis(text):
+    return emoji.demojize(str(text))
+
+# Function: Personality Trait Prediction
+def personality_analysis_sentence(sentence, models, tokenizers, max_length=512):
+    trait_emojis = {
+        "Openness": "🌍",
+        "Conscientiousness": "🧐",
+        "Extraversion": "🎉",
+        "Agreeableness": "🤝",
+        "Neuroticism": "😰"
+    }
+
+    traits_detected = []
+    for trait, model in models.items():
+        encodings = tokenizers[trait]([sentence], truncation=True, padding=True, max_length=max_length, return_tensors='pt')
+        model.eval()
+        with torch.no_grad():
+            score = torch.sigmoid(model(**encodings).logits).item()
+            if score > 0.61:
+                traits_detected.append(f"{trait.capitalize()} {trait_emojis[trait.capitalize()]}") # Capitalize trait names for better readability
+    return traits_detected
 
 # Load model and tokenizer
 with st.spinner("Loading the model..."):
     model, tokenizer = load_model_and_tokenizer()
 
     st.title("Tenant Conversation Analysis 📊")
-    # st.write(
-    #     """
-    #     This app detects **Multi-Word Expressions (MWEs)** in a sentence using a fine-tuned 
-    #     **RoBERTa-CRF model**.
-    #     """
-    # )
 
     # Input box for user sentence
     with st.form(key='text_input_form'):
@@ -342,3 +386,11 @@ with st.spinner("Loading the model..."):
 
                 # Display problem resolution status without border
                 st.markdown(f"###### 📞 Problem Resolution: {problem_resolved}", unsafe_allow_html=True)  
+
+            # Show the personality trait(s) based on the full conversation
+            full_conversation = convert_emojis(conversation.strip())  # Convert emojis to text
+            trait_results = personality_analysis_sentence(full_conversation, st.session_state.models, st.session_state.tokenizers)
+
+            if trait_results:
+                print(trait_results)
+                st.markdown(f"###### 🎭 Personality Traits: {' | '.join(trait_results)}", unsafe_allow_html=True)  
